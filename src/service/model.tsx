@@ -1,3 +1,14 @@
+export interface CompanyData {
+  id: string;
+  companyName : string;
+  companyPhone : string;
+  level : number;
+  exp?: string;
+  maxAccount?: number;
+  createdDate : string;
+  updatedDate : string;
+  updatedBy : string;
+}
 
 export interface Product {
     productId : string,
@@ -30,6 +41,26 @@ export interface User {
     createdDate : string,
     updatedDate : string,
     version : string
+}
+
+export interface UserData {
+  username: string;
+  fullName: string;
+  role: string;
+  photoUrl?: string;
+  branchId?: string;
+  companyId?: string;
+  createdDate?: string;
+  device?: string;
+  key?: string;
+  uuid?: string;
+  lastLogin?: string;
+  mobileToken?: string;
+  userStatus?: "Active" | "InActive";
+  updatedDate?: string;
+  version?: string;
+  refCode?: string | null;
+  affiliateCode?:string | null;
 }
 
 export interface Trx {

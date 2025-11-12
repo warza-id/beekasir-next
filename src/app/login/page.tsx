@@ -18,6 +18,7 @@ import {
   faSpinner   // Tambahkan ikon
 } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image"; // Gunakan Next/Image
+import { CompanyData, UserData } from "@/service/model";
 
 export default function Login() {
   const { handleSubmit, register, formState: { errors }} = useForm();
@@ -41,11 +42,11 @@ export default function Login() {
     
     const ref = doc(DB, 'Users', user.username);
     const data = await getDoc(ref);
-    const row = data.data();
+    const row = data.data() as UserData;
     
     if (!row) {
       setLoading(false);
-      setLoadingDesc('User Tidak Terdaftar');
+      setLoadingDesc('Username atau Password Tidak Sesuai');
       AlertSweet('warning', 'Login Gagal','Username atau Password tidak sesuai');
     } else if(row.userStatus != 'Active'){
       setLoading(false);
@@ -53,7 +54,6 @@ export default function Login() {
       AlertSweet('warning', 'Login Gagal','Username atau Password tidak dapat digunakan');
     } else {
       localSave('@user', row);
-      setLoadingDesc('User Terdaftar');
       getCompany(row, user);
     }
   }
@@ -64,19 +64,18 @@ export default function Login() {
       setLoadingDesc('Memeriksa Otentikasi 2/4');
       const ref = doc(DB, 'Company', user.companyId);
       const data = await getDoc(ref);
-      const row = data.data();
-      
+      const row = data.data() as CompanyData;
+      console.log(row);
       if (!row) {
         setLoading(false);
         setLoadingDesc('Usaha Tidak Terdaftar');
         AlertSweet('warning', 'Login Gagal','Silahkan login di aplikasi mobile untuk melengkapi data.');
-      } else if(!row.level){
+      } else if(row.level < 1){
         setLoading(false);
         setLoadingDesc('Upgrade Langganan untuk menggunakan beekasir web');
-        AlertSweet('warning', 'Tidak diijinkan','Silahkan upgrade langganan untuk menggunakan beekasir web.');
+        AlertSweet('warning', 'Ups Akses Terkunci','Silahkan upgrade member ke Pro untuk menggunakan fitur web.');
       } else {
         localSave('@company', row);
-        setLoadingDesc('Usaha Terdaftar');
         getBranch(user, login);
       }
     } catch (error) {
