@@ -1,49 +1,72 @@
 "use client"
 import { formatCcy } from "@/service/helper";
-import { Grid } from "@mui/material";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function Nota({
-    params,
-    searchParams,
-  }: {
-    params: { slug: string }
-    searchParams: { [key: string]: string | string[] | undefined }
-  }){
+// Tentukan lebar nota Anda di sini
+// 58mm = w-[219px]
+// 80mm = w-[302px]
+const RECEIPT_WIDTH_CLASS = "w-[302px]"; // <-- GANTI INI UNTUK 58mm / 80mm
+
+export default function Nota() {
     const param = useSearchParams();
-    const router = useRouter();
     const [trx, setTrx] = useState<any>(null);
     const [company, setCompany] = useState<any>(null);
     const [items, setItems] = useState([]);
+    const [isLoading, setIsLoading] = useState(true); // 1. Tambah state loading
 
+    // --- 2. Perbaikan Logika Fetch & Print ---
+
+    // Efek ini HANYA untuk mengambil data
     useEffect(() => {
-        getData();
-    }, []);
+        async function getData() {
+            try {
+                const c : string | null = param.get('c');
+                const b : string | null = param.get('b');
+                const t : string | null = param.get('t');
 
-    async function getData() {
+                // Validasi parameter
+                if (!c || !b || !t) {
+                    // Anda bisa redirect atau menampilkan error
+                    console.error("Parameter tidak lengkap");
+                    return;
+                }
+
+                // Jalankan fetch secara paralel agar lebih cepat
+                const [companyData, notaData, itemsData] = await Promise.all([
+                    getCompany(c, b),
+                    getNota(c, t),
+                    getNotaItems(c, t)
+                ]);
+
+                // Set semua state
+                setCompany(companyData);
+                setTrx(notaData);
+                if (itemsData) {
+                    setItems(itemsData);
+                }
+                
+            } catch (error) {
+                console.error("Gagal mengambil data nota:", error);
+            } finally {
+                setIsLoading(false); // Set loading false saat selesai (atau gagal)
+            }
+        }
         
-        // let companyId : string | string[] | null = "";
-        // if (searchParams.q) {
-            
-        //     companyId = searchParams.q;
-        // } else if(param.get('q')){
-        //     companyId = param.get('q');
-        // } else {
-        //     router.replace('/404');
-        // }
-        // console.log(searchParams);
-        // console.log(param.get('c'));
-        const c : string | null = param.get('c');
-        const b : string | null = param.get('b');
-        const t : string | null = param.get('t');
-        
-        await getCompany(c, b);
-        await getNota(c, t);
-        await getNotaItems(c, t);
-        
-        window.print();
-    }
+        getData();
+    }, [param]); // Tambahkan dependensi `param`
+    
+    useEffect(() => {
+        // Hanya panggil print() JIKA loading sudah selesai DAN data ada
+        if (isLoading === false && trx) {
+            window.print();
+            // Opsional: Tutup tab atau kembali ke halaman sebelumnya
+            // window.close();
+            // router.back();
+        }
+    }, [isLoading]); // Dependensi pada isLoading dan trx
+
+    // --- 3. Ubah Fungsi Fetch untuk MENGEMBALIKAN data ---
 
     async function getNota(c : string | null, t : string | null) {
         const api = await fetch('/api/nota', {
@@ -56,11 +79,8 @@ export default function Nota({
                 "companyId" : c,
                 "trxId" : t
             })});
-
         const res = await api.json();
-        const data = await res.data;
-        
-        setTrx(data);
+        return res.data; // Kembalikan data
     }
 
     async function getCompany(c : string | null, b : string | null) {
@@ -74,16 +94,11 @@ export default function Nota({
                 "companyId" : c,
                 "branchId" : b
             })});
-
         const res = await api.json();
-        const data = await res.data;
-        
-        setCompany(data);
+        return res.data; // Kembalikan data
     }
 
     async function getNotaItems(c : string | null, t : string | null) {
-        console.log("Get Nota");
-        
         const api = await fetch('/api/notaitems', {
             method: 'POST',
             headers :  {
@@ -94,96 +109,122 @@ export default function Nota({
                 "companyId" : c,
                 "trxId" : t
             })});
-
         const res = await api.json();
-        const data = await res.data;
-        console.log(data);
-        if (data) {
-            setItems(data);    
-        }
-        
+        return res.data; // Kembalikan data
     }
+
+    // --- Tampilan Loading ---
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen bg-gray-100">
+                <div className={`${RECEIPT_WIDTH_CLASS} font-mono text-center p-4 bg-white shadow-lg`}>
+                    Memuat nota...
+                </div>
+            </div>
+        );
+    }
+
+    // --- 4. Tampilan Nota (Struktur HTML Baru) ---
+    // (MUI Grid dan class responsive sm:/lg: Dihapus)
+
+    // Wrapper ini PENTING untuk @media print
     return (
-        <div className="sm:pt-5 lg:pt-10 p-5">
-            <Grid container spacing={2}>
-                <Grid item sm={6} xs={12}>
-                    { (company?.companyName) ? company?.companyName : 'loading company name...' } <br />
-                    { (company?.branchAddress) ? company?.branchAddress : 'loading company address...' } <br />
-                    { (company?.companyPhone) ? company?.companyPhone : 'loading company phone...' } <br />
-                </Grid>
-                <Grid className="sm:text-right" item sm={6} xs={12}>
-                    Pembeli <br />
-                    
-                    <Grid container spacing={2}>
-                        <Grid item sm={6} xs={6}>
-                            Nama : <br />
-                            Alamat : 
-                        </Grid>
-                        <Grid className="sm:text-right" item sm={6} xs={6}>
-                            { (trx?.memberName) ? trx?.memberName : '____________________' } <br />
-                            { (trx?.memberAddress) ? trx?.memberAddress : '____________________' }
-                        </Grid>
-                    </Grid>
-                </Grid>
-            </Grid>
-            <hr />
-            <br />
-            <center className="bold">
-                Bukti Transaksi <br />
-                Nomor : { (trx?.trxId) ? trx?.trxId : 'Loading Transaction...' } <br />
-                Waktu Transaksi : { (trx?.createdDate) ? trx?.createdDate : 'YYYY-MM-DD HH:ii:ss' }
-
-            </center>
-            <br />
-            <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                <th align="center">List Item</th>
-                </tr>
-            </thead>
+        <div className="print-wrapper flex justify-center items-start min-h-screen bg-gray-100 p-4">
             
-                { items.map((data : any,i) => {
-                    return (
-                        <tbody key={i}>
-                        <tr >
-                        <td>{ i+1 } | {data.productName}</td>
-                        </tr>
-                        <tr >
-                        <td className="text-right">{data.qty} x Rp{ formatCcy(data.price) }</td>
-                        </tr>
-                        </tbody>
-                    )
-                })}
+            {/* Container Nota Utama 
+              - `font-mono` untuk font thermal printer
+              - `text-xs` atau `text-[10pt]` untuk font kecil
+              - `text-black` agar terbaca jelas
+            */}
+            <div className={`receipt-container-on-print ${RECEIPT_WIDTH_CLASS} bg-white text-black font-mono text-xs p-2 shadow-lg`}>
                 
-            
-            </table>
-            <Grid container spacing={2}>
-                <Grid item sm={6} xs={12}>
-                    <span className="box">{trx?.status}</span>
-                    <div>{trx?.note}</div>
-                </Grid>
-                <Grid className="sm:text-right" item sm={6} xs={12}>
-                    
-                    <Grid container spacing={2}>
-                        <Grid item sm={6} xs={6}>
-                            Total Item <br />
-                            Total Tagihan<br />
-                            { (trx?.method) ? trx?.method : 'CASH' } <br />
-                            Kembalian
-                        </Grid>
-                        <Grid className="sm:text-right" item sm={6} xs={6}>
-                            { (trx?.trxQty) ? formatCcy(trx?.trxQty) : '0' } <br />
-                            Rp{ (trx?.trxTotal) ? formatCcy(trx?.trxTotal) : '0' } <br />
-                            Rp{ (trx?.amount) ? formatCcy(trx?.amount) : '0' } <br />
-                            Rp{ (trx?.kembalian) ? formatCcy(trx?.kembalian) : '0' }
+                {/* Header Struk */}
+                <div className="text-center">
+                    <h2 className="font-bold text-sm uppercase">
+                        { (company?.companyName) ? company.companyName : '...' }
+                    </h2>
+                    <p className="text-[10px] leading-tight">
+                        { (company?.branchAddress) ? company.branchAddress : '...' }
+                    </p>
+                    <p className="text-[10px] leading-tight">
+                        Telp: { (company?.companyPhone) ? company.companyPhone : '...' }
+                    </p>
+                </div>
 
-                        </Grid>
-                    </Grid>
-                </Grid>
-            </Grid>
-            <br />
-            <hr />
-            Bukti Transaksi ini dicetak otomatis dari aplikasi beekasir
+                {/* Garis Pemisah */}
+                <div className="border-t border-dashed border-black my-2"></div>
+
+                {/* Info Transaksi */}
+                <div className="flex justify-between text-[10px]">
+                    <span>No: { (trx?.trxId) ? trx.trxId : '...' }</span>
+                    <span>Kasir: { (trx?.kasir) ? trx.kasir : 'Staff' }</span>
+                </div>
+                <div className="text-[10px]">
+                    <span>Waktu: { (trx?.createdDate) ? trx.createdDate : '...' }</span>
+                </div>
+
+                {/* Info Pembeli */}
+                <div className="mt-1 text-[10px]">
+                    <p>Pembeli: { (trx?.memberName) ? trx.memberName : '-' }</p>
+                </div>
+
+                {/* Garis Pemisah */}
+                <div className="border-t border-dashed border-black my-2"></div>
+
+                {/* Daftar Item */}
+                <div>
+                    {items.map((data : any, i) => (
+                        <div key={i} className="mb-1">
+                            {/* Baris 1: Nama Item */}
+                            <p className="uppercase">{data.productName}</p>
+                            {/* Baris 2: (Qty @ Harga Satuan) --- (Total Harga Item) */}
+                            <div className="flex justify-between">
+                                <span>  {data.qty} @ {formatCcy(data.price)}</span>
+                                <span className="font-semibold">{formatCcy(data.qty * data.price)}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Garis Pemisah */}
+                <div className="border-t border-dashed border-black my-2"></div>
+
+                {/* Perhitungan Total */}
+                <div className="space-y-1">
+                    <div className="flex justify-between">
+                        <span>Total Item</span>
+                        <span>{ (trx?.trxQty) ? formatCcy(trx.trxQty) : '0' }</span>
+                    </div>
+                    
+                    <div className="flex justify-between font-bold text-sm">
+                        <span>TOTAL</span>
+                        <span>Rp{ (trx?.trxTotal) ? formatCcy(trx.trxTotal) : '0' }</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                        <span>{ (trx?.method) ? trx.method.toUpperCase() : 'CASH' }</span>
+                        <span>Rp{ (trx?.amount) ? formatCcy(trx.amount) : '0' }</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                        <span>Kembalian</span>
+                        <span>Rp{ (trx?.kembalian) ? formatCcy(trx.kembalian) : '0' }</span>
+                    </div>
+                </div>
+
+                {/* Status & Catatan */}
+                <div className="border-t border-dashed border-black my-2 pt-2">
+                    <span className="font-bold text-sm uppercase">{trx?.status}</span>
+                    <p className="text-[10px]">{trx?.note}</p>
+                </div>
+
+
+                {/* Footer Struk */}
+                <div className="text-center mt-3">
+                    <p>Bukti Transaksi ini dicetak otomatis dari aplikasi beekasir</p>
+                    <p className="font-bold">Terima Kasih</p>
+                </div>
+            </div>
         </div>
     )
 }
