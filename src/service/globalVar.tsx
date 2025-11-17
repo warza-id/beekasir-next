@@ -24,13 +24,13 @@ export const globalRoleAccess = (role : string) => {
 }
 
 export const sysMenus = [
-    // {
-    //   id:'INV',
-    //   label:'Inventori Produk',
-    //   icon:'fa-solid fa-cube',
-    //   route:'MenuProduct',
-    //   level:0,
-    // },
+    {
+      id:'INV',
+      label:'Master Produk',
+      icon:'fa-solid fa-cube',
+      route:'MasterProduct',
+      level:0,
+    },
     // {
     //   id:'CAT',
     //   label:'Daftar Kategori',
