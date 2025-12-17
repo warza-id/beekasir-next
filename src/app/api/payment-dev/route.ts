@@ -47,7 +47,7 @@ export async function POST(req : Request, response : Response, head : Headers) {
           }
           
           console.log("====> Prepare Update Company");
-          await updateDoc(refCompany, { 'level' : bill.level, 'exp' : exp});
+          await updateDoc(refCompany, { 'level' : bill.level, 'exp' : exp, 'maxAccount': bill.account_count, 'gross_amount' : bill.gross_amount});
           console.log("====> Success Update Company");
           console.log(body.order_id + " - " + body.transaction_status + " Level Updated " + bill.level + " Until " + exp);
           return NextResponse.json({ 'data': 'Settlement and Upgrade Success ', 'status': '200', 'statusDesc' : 'Settlement Order '  + body.order_id});
