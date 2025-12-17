@@ -28,8 +28,8 @@ const firebaseConfigDev = {
   projectId: "beekasir",
   storageBucket: "beekasir.appspot.com",
   messagingSenderId: "690577079701",
-  appId: "1:690577079701:web:3b2967e6733ca6ef594a9c",
-  measurementId: "G-LM8GHHHQCZ"
+  appId: "1:690577079701:web:6f8fd29caab9c6be594a9c",
+  measurementId: "G-CS1W5SJVFG"
 };
 
 let appA: FirebaseApp;
