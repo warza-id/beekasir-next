@@ -3,9 +3,11 @@ import { DocumentData, collection, getDocs, doc, getDoc, updateDoc } from "fireb
 import { headers } from "next/dist/client/components/headers";
 import { NextResponse } from "next/server";
 import moment from "moment";
-import { DB } from "@/service/firebase-dev";
+import { DB_DEV } from "@/service/firebase";
 
 export async function POST(req : Request, response : Response, head : Headers) {
+  console.log("API Baru");
+  
     try {
       console.log("Payment Dev Receipt");
         
@@ -18,7 +20,7 @@ export async function POST(req : Request, response : Response, head : Headers) {
       // if (apiKey != 'Veritrans') {
       //   return NextResponse.json({ 'data': 'Access Forbbiden', 'status': '401', 'statusDesc' : 'Alert access unidentified'});
       // }
-      const refBill = doc(DB, "Billing/" + body.order_id);
+      const refBill = doc(DB_DEV, "Billing/" + body.order_id);
       await updateDoc(refBill, body);
       const bill = (await getDoc(refBill)).data();
       console.log(bill);
@@ -28,7 +30,7 @@ export async function POST(req : Request, response : Response, head : Headers) {
         if (bill) {
           let exp = moment().add(bill.qty, 'M').format("YYYY-MM-DD");
           
-          const refCompany = doc(DB, "Company/" + bill.companyId);
+          const refCompany = doc(DB_DEV, "Company/" + bill.companyId);
           const company = (await getDoc(refCompany)).data();
           //console.log(company);
           
