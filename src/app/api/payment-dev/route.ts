@@ -16,6 +16,10 @@ export async function POST(req : Request, response : Response, head : Headers) {
       console.log("====> Read Body");
       const headersList = headers();
       const apiKey  = headersList.get('user-agent');
+      console.log(headersList);
+      
+      console.log(apiKey);
+      
       
       // if (apiKey != 'Veritrans') {
       //   return NextResponse.json({ 'data': 'Access Forbbiden', 'status': '401', 'statusDesc' : 'Alert access unidentified'});
