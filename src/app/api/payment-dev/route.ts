@@ -14,16 +14,7 @@ export async function POST(req : Request, response : Response, head : Headers) {
 
       console.log(body);
       console.log("====> Read Body");
-      const headersList = headers();
-      const apiKey  = headersList.get('user-agent');
-      console.log(headersList);
       
-      console.log(apiKey);
-      
-      
-      // if (apiKey != 'Veritrans') {
-      //   return NextResponse.json({ 'data': 'Access Forbbiden', 'status': '401', 'statusDesc' : 'Alert access unidentified'});
-      // }
       const refBill = doc(DB_DEV, "Billing/" + body.order_id);
       await updateDoc(refBill, body);
       console.log("====> Update Billing");
