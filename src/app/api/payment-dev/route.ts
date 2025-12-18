@@ -55,7 +55,7 @@ export async function POST(req : Request, response : Response, head : Headers) {
       
       console.log(body.order_id + " - " + body.transaction_status);
       console.log("====> Error Service");
-      return NextResponse.json({ 'data': body, 'status': '200', 'statusDesc' : headersList});
+      return NextResponse.json({ 'data': body, 'status': '200', 'statusDesc' : 'Sukses'});
     } catch (error) {
       console.log(error);
       console.log("====> Error Catch");
